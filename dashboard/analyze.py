@@ -11,6 +11,13 @@ SUSI_PATH = os.path.join(os.path.dirname(__file__), "susi_dictionary.json")
 with open(SUSI_PATH) as f:
     SUSI = json.load(f)
 
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DATA_DIR = os.environ.get("FLOWDROID_DATA_DIR", PROJECT_ROOT)
+REPORTS_DIR = os.path.join(DATA_DIR, "reports")
+CACHE_DIR = os.path.join(DATA_DIR, "cache")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+ANDROID_PLATFORMS = os.environ.get("ANDROID_PLATFORMS", "/opt/android-sdk/platforms/")
+
 def analyze_apk(apk_path):
     FLOWDROID_JAR_PATH = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../FlowDroid/soot-infoflow-cmd-2.13.0-jar-with-dependencies.jar")
@@ -21,7 +28,7 @@ def analyze_apk(apk_path):
     command = [
         "java", "-jar", FLOWDROID_JAR_PATH,
         "-a", apk_path,
-        "-p", "/opt/android-sdk/platforms/",
+        "-p", ANDROID_PLATFORMS,
         "-s", FLOWDROID_JAR_PATH_SS
     ]
     result = subprocess.run(command, capture_output=True, text=True)
@@ -79,6 +86,9 @@ def parse_output(output):
     }
     
 def summarize_with_llm(report):
+    if not os.environ.get("GROQ_API_KEY"):
+        return "Summary unavailable because GROQ_API_KEY is not configured."
+
     client = Groq(api_key=os.environ["GROQ_API_KEY"])
     
     prompt = f"""
@@ -92,7 +102,7 @@ def summarize_with_llm(report):
     """
     
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
     
@@ -109,7 +119,8 @@ def llm_classify_sink(sig):
     clean = clean_signature(sig)
     
     # load cache
-    cache_path = os.path.join(os.path.dirname(__file__), "sink_cache.json")
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    cache_path = os.path.join(CACHE_DIR, "sink_cache.json")
     if os.path.exists(cache_path):
         with open(cache_path) as f:
             cache = json.load(f)
@@ -119,6 +130,9 @@ def llm_classify_sink(sig):
     # return cached result if exists
     if clean in cache:
         return cache[clean]
+
+    if not os.environ.get("GROQ_API_KEY"):
+        return "UNKNOWN"
     
     # ask LLM
     client = Groq(api_key=os.environ["GROQ_API_KEY"])
@@ -150,7 +164,7 @@ def llm_classify_sink(sig):
     Reply with ONLY the category name, nothing else."""
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
     
@@ -225,8 +239,8 @@ def calculate_risk(source, sink, leak_count):
         "label": label
     }
     
-def run(apk_path):
-    app_name = os.path.basename(apk_path)
+def run(apk_path, original_filename=None):
+    app_name = original_filename or os.path.basename(apk_path)
     print(f"Analyzing {app_name}...")
     
     output = analyze_apk(apk_path)
@@ -235,9 +249,8 @@ def run(apk_path):
     report["app"] = app_name
     report["summary"] = summarize_with_llm(report)
     
-    reports_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../reports"))
-    os.makedirs(reports_dir, exist_ok=True)
-    output_path = os.path.join(reports_dir, f"{app_name}.json")
+    os.makedirs(REPORTS_DIR, exist_ok=True)
+    output_path = os.path.join(REPORTS_DIR, f"{app_name}.json")
     with open(output_path, "w") as f:
         json.dump(report, f, indent=2)
     

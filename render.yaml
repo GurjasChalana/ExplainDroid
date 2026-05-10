@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: flowdroid-dashboard
+    env: docker
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: flowdroid-data
+      mountPath: /data
+      sizeGB: 10
+    envVars:
+      - key: FLOWDROID_DATA_DIR
+        value: /data
+      - key: FLOWDROID_MAX_WORKERS
+        value: "1"
+      - key: FLOWDROID_MAX_UPLOAD_MB
+        value: "100"
+      - key: ANDROID_PLATFORMS
+        value: /opt/android-sdk/platforms
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DASHBOARD_USERNAME
+        value: flowdroid
+      - key: DASHBOARD_PASSWORD
+        sync: false

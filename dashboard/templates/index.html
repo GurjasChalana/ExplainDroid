@@ -162,12 +162,12 @@ function uploadAPK() {
         document.getElementById('spinner').style.display = 'none';
         return;
       }
-      pollStatus(data.filename);
+      pollStatus(data.job_id);
     });
 }
 
-function pollStatus(filename) {
-  fetch('/status/' + filename)
+function pollStatus(jobId) {
+  fetch('/status/' + jobId)
     .then(r => r.json())
     .then(data => {
       if (data.status === 'done') {
@@ -175,7 +175,7 @@ function pollStatus(filename) {
       } else if (data.status === 'error') {
         document.getElementById('spinner').innerText = 'Analysis failed. Check server logs.';
       } else {
-        setTimeout(() => pollStatus(filename), 2000);
+        setTimeout(() => pollStatus(jobId), 2000);
       }
     });
 }
