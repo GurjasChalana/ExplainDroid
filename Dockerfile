@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV FLOWDROID_DATA_DIR=/data
+ENV EXPLAINDROID_DATA_DIR=/data
 ENV ANDROID_HOME=/opt/android-sdk
 ENV ANDROID_PLATFORMS=/opt/android-sdk/platforms
 ENV HOST=0.0.0.0
@@ -38,4 +38,4 @@ RUN mkdir -p /data/uploads /data/reports /data/cache
 
 EXPOSE 8080
 
-CMD ["python", "dashboard/app.py"]
+CMD ["python", "explaindroid/app.py"]

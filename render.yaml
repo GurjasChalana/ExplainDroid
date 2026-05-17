@@ -1,19 +1,19 @@
 services:
   - type: web
-    name: flowdroid-dashboard
+    name: explaindroid
     env: docker
     plan: starter
     healthCheckPath: /health
     disk:
-      name: flowdroid-data
+      name: explaindroid-data
       mountPath: /data
       sizeGB: 10
     envVars:
-      - key: FLOWDROID_DATA_DIR
+      - key: EXPLAINDROID_DATA_DIR
         value: /data
-      - key: FLOWDROID_MAX_WORKERS
+      - key: EXPLAINDROID_MAX_WORKERS
         value: "1"
-      - key: FLOWDROID_MAX_UPLOAD_MB
+      - key: EXPLAINDROID_MAX_UPLOAD_MB
         value: "100"
       - key: ANDROID_PLATFORMS
         value: /opt/android-sdk/platforms
@@ -21,7 +21,7 @@ services:
         value: llama-3.3-70b-versatile
       - key: GROQ_API_KEY
         sync: false
-      - key: DASHBOARD_USERNAME
-        value: flowdroid
-      - key: DASHBOARD_PASSWORD
+      - key: EXPLAINDROID_USERNAME
+        value: explaindroid
+      - key: EXPLAINDROID_PASSWORD
         sync: false

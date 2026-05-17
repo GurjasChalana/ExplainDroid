@@ -12,24 +12,24 @@ with open(SUSI_PATH) as f:
     SUSI = json.load(f)
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DATA_DIR = os.environ.get("FLOWDROID_DATA_DIR", PROJECT_ROOT)
+DATA_DIR = os.environ.get("EXPLAINDROID_DATA_DIR", PROJECT_ROOT)
 REPORTS_DIR = os.path.join(DATA_DIR, "reports")
 CACHE_DIR = os.path.join(DATA_DIR, "cache")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 ANDROID_PLATFORMS = os.environ.get("ANDROID_PLATFORMS", "/opt/android-sdk/platforms/")
 
 def analyze_apk(apk_path):
-    FLOWDROID_JAR_PATH = os.path.abspath(
+    ANALYZER_JAR_PATH = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../FlowDroid/soot-infoflow-cmd-2.13.0-jar-with-dependencies.jar")
     )
-    FLOWDROID_JAR_PATH_SS = os.path.abspath(
+    SOURCES_AND_SINKS_PATH = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../FlowDroid/SourcesAndSinks.txt")
     )
     command = [
-        "java", "-jar", FLOWDROID_JAR_PATH,
+        "java", "-jar", ANALYZER_JAR_PATH,
         "-a", apk_path,
         "-p", ANDROID_PLATFORMS,
-        "-s", FLOWDROID_JAR_PATH_SS
+        "-s", SOURCES_AND_SINKS_PATH
     ]
     result = subprocess.run(command, capture_output=True, text=True)
     output = result.stdout + result.stderr

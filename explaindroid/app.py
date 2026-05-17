@@ -10,15 +10,15 @@ import uuid
 app = Flask(__name__)
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DATA_DIR = os.environ.get("FLOWDROID_DATA_DIR", PROJECT_ROOT)
+DATA_DIR = os.environ.get("EXPLAINDROID_DATA_DIR", PROJECT_ROOT)
 UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
 REPORTS_FOLDER = os.path.join(DATA_DIR, "reports")
-MAX_WORKERS = int(os.environ.get("FLOWDROID_MAX_WORKERS", "1"))
-DASHBOARD_USERNAME = os.environ.get("DASHBOARD_USERNAME", "flowdroid")
-DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD")
+MAX_WORKERS = int(os.environ.get("EXPLAINDROID_MAX_WORKERS", "1"))
+EXPLAINDROID_USERNAME = os.environ.get("EXPLAINDROID_USERNAME", "explaindroid")
+EXPLAINDROID_PASSWORD = os.environ.get("EXPLAINDROID_PASSWORD")
 
 app.config["MAX_CONTENT_LENGTH"] = int(
-    os.environ.get("FLOWDROID_MAX_UPLOAD_MB", "100")
+    os.environ.get("EXPLAINDROID_MAX_UPLOAD_MB", "100")
 ) * 1024 * 1024
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -26,21 +26,21 @@ os.makedirs(REPORTS_FOLDER, exist_ok=True)
 
 @app.before_request
 def require_auth():
-    if request.path == "/health" or not DASHBOARD_PASSWORD:
+    if request.path == "/health" or not EXPLAINDROID_PASSWORD:
         return None
 
     auth = request.authorization
     if (
         auth
-        and compare_digest(auth.username, DASHBOARD_USERNAME)
-        and compare_digest(auth.password, DASHBOARD_PASSWORD)
+        and compare_digest(auth.username, EXPLAINDROID_USERNAME)
+        and compare_digest(auth.password, EXPLAINDROID_PASSWORD)
     ):
         return None
 
     return Response(
         "Authentication required",
         401,
-        {"WWW-Authenticate": 'Basic realm="FlowDroid Dashboard"'}
+        {"WWW-Authenticate": 'Basic realm="ExplainDroid"'}
     )
 
 @app.route("/")

@@ -42,6 +42,6 @@ def build_susi_dictionaries(sources_file, sinks_file):
     print("Saved to susi_dictionary.json")
 
 build_susi_dictionaries(
-    os.path.expanduser("~/flowdroid-dashboard/FlowDroid/Ouput_CatSources_v0_9.txt"),
-    os.path.expanduser("~/flowdroid-dashboard/FlowDroid/Ouput_CatSinks_v0_9.txt")
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../FlowDroid/Ouput_CatSources_v0_9.txt")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../FlowDroid/Ouput_CatSinks_v0_9.txt"))
 )

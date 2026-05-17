@@ -1,12 +1,12 @@
 services:
-  dashboard:
+  explaindroid:
     build: .
     ports:
       - "8080:8080"
     env_file:
       - .env
     volumes:
-      - flowdroid-data:/data
+      - explaindroid-data:/data
 
 volumes:
-  flowdroid-data:
+  explaindroid-data:

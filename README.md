@@ -1,6 +1,6 @@
-# FlowDroid Dashboard
+# ExplainDroid
 
-A small Flask dashboard for running FlowDroid on Android APKs and viewing privacy leak results.
+A small Flask app for running FlowDroid on Android APKs and explaining privacy leak results.
 
 ## What It Does
 
@@ -9,14 +9,14 @@ A small Flask dashboard for running FlowDroid on Android APKs and viewing privac
 - Parse detected source-to-sink leaks
 - Score each leak by privacy risk
 - Generate a short plain-English summary with Groq
-- Show reports in a browser dashboard
+- Show ExplainDroid reports in a browser
 
 ## Run Locally
 
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python dashboard/app.py
+.venv/bin/python explaindroid/app.py
 ```
 
 Open http://127.0.0.1:5000/.
@@ -30,7 +30,7 @@ docker compose up --build
 
 Set `GROQ_API_KEY` in `.env` before running analysis.
 
-## Dashboard Flow
+## ExplainDroid Flow
 
 1. Choose an APK file.
 2. Click **Run Analysis**.
@@ -43,5 +43,4 @@ Set `GROQ_API_KEY` in `.env` before running analysis.
 
 ## Deployment
 
-The app is set up for a simple Docker deployment on Render. Store secrets like `GROQ_API_KEY` and `DASHBOARD_PASSWORD` as environment variables, not in the repo.
-
+The app is set up for a simple Docker deployment on Render. Store secrets like `GROQ_API_KEY` and `EXPLAINDROID_PASSWORD` as environment variables, not in the repo.
