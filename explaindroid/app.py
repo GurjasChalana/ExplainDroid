@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import threading
 import uuid
 
 from flask import Flask, abort, jsonify, redirect, render_template, request, url_for
@@ -14,6 +15,9 @@ app.config["MAX_CONTENT_LENGTH"] = config.MAX_UPLOAD_BYTES
 
 config.ensure_data_dirs()
 db.init_db()
+
+inline_jobs = set()
+inline_jobs_lock = threading.Lock()
 
 
 def job_payload(job):
@@ -107,6 +111,40 @@ def validate_apk(filename, size_bytes):
     if size_bytes is not None and size_bytes > config.MAX_UPLOAD_BYTES:
         return f"APK is too large. The MVP limit is {config.MAX_UPLOAD_MB}MB."
     return None
+
+
+def enqueue_or_run_analysis(job_id):
+    enqueue_result = queueing.enqueue_analysis(job_id)
+    if enqueue_result.get("queued"):
+        return enqueue_result
+
+    with inline_jobs_lock:
+        if job_id in inline_jobs:
+            return {
+                "queued": False,
+                "inline": True,
+                "reason": "Analysis is already running in the web process",
+            }
+        inline_jobs.add(job_id)
+
+    def run_inline():
+        try:
+            from .worker import analyze_job
+
+            analyze_job(job_id)
+        except Exception as exc:
+            print(f"Inline analysis job {job_id} failed: {exc}")
+        finally:
+            with inline_jobs_lock:
+                inline_jobs.discard(job_id)
+
+    thread = threading.Thread(target=run_inline, daemon=True)
+    thread.start()
+    return {
+        "queued": False,
+        "inline": True,
+        "reason": "REDIS_URL is not configured; analysis started in the web process",
+    }
 
 
 @app.route("/")
@@ -241,7 +279,7 @@ def complete_upload(job_id):
     if not job:
         return jsonify({"error": "Job not found"}), 404
     db.update_job(job_id, status="queued", stage="queued")
-    enqueue_result = queueing.enqueue_analysis(job_id)
+    enqueue_result = enqueue_or_run_analysis(job_id)
     return jsonify({
         "job": job_payload(db.get_job(job_id)),
         "queue": enqueue_result,
@@ -264,7 +302,7 @@ def legacy_upload():
     db.create_job(job_id, filename, key, "local", request.content_length or 0)
     storage.save_local_upload(key, file)
     db.update_job(job_id, status="queued", stage="queued")
-    enqueue_result = queueing.enqueue_analysis(job_id)
+    enqueue_result = enqueue_or_run_analysis(job_id)
     return {
         "status": "queued",
         "job_id": job_id,

@@ -2,18 +2,18 @@ services:
   - type: web
     name: explaindroid
     runtime: docker
-    plan: starter
+    plan: free
     dockerCommand: python -m explaindroid.app
     healthCheckPath: /health
     envVars:
       - key: EXPLAINDROID_DATA_DIR
         value: /data
       - key: EXPLAINDROID_MAX_UPLOAD_MB
-        value: "500"
+        value: "100"
       - key: EXPLAINDROID_ANALYSIS_TIMEOUT_SECONDS
-        value: "1800"
+        value: "600"
       - key: EXPLAINDROID_JAVA_MAX_HEAP_MB
-        value: "2048"
+        value: "384"
       - key: EXPLAINDROID_PROCESS_MULTIPLE_DEX
         value: "0"
       - key: EXPLAINDROID_LENIENT_PARSING
@@ -32,11 +32,6 @@ services:
         fromDatabase:
           name: explaindroid-db
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: explaindroid-queue
-          property: connectionString
       - key: GROQ_MODEL
         value: llama-3.3-70b-versatile
       - key: GROQ_API_KEY
@@ -51,64 +46,7 @@ services:
         sync: false
       - key: EXPLAINDROID_S3_SECRET_ACCESS_KEY
         sync: false
-
-  - type: worker
-    name: explaindroid-worker
-    runtime: docker
-    plan: starter
-    dockerCommand: python -m explaindroid.worker
-    maxShutdownDelaySeconds: 300
-    envVars:
-      - key: EXPLAINDROID_DATA_DIR
-        value: /data
-      - key: EXPLAINDROID_MAX_UPLOAD_MB
-        value: "500"
-      - key: EXPLAINDROID_ANALYSIS_TIMEOUT_SECONDS
-        value: "1800"
-      - key: EXPLAINDROID_JAVA_MAX_HEAP_MB
-        value: "2048"
-      - key: EXPLAINDROID_PROCESS_MULTIPLE_DEX
-        value: "0"
-      - key: EXPLAINDROID_LENIENT_PARSING
-        value: "1"
-      - key: EXPLAINDROID_FLOWDROID_EXTRA_ARGS
-        value: ""
-      - key: EXPLAINDROID_FLOWDROID_FALLBACK_ARGS
-        value: "-ot -nc"
-      - key: ANDROID_PLATFORMS
-        value: /opt/android-sdk/platforms
-      - key: JAVA_BIN
-        value: java
-      - key: DATABASE_URL
-        fromDatabase:
-          name: explaindroid-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: explaindroid-queue
-          property: connectionString
-      - key: GROQ_MODEL
-        value: llama-3.3-70b-versatile
-      - key: GROQ_API_KEY
-        sync: false
-      - key: EXPLAINDROID_S3_BUCKET
-        sync: false
-      - key: EXPLAINDROID_S3_ENDPOINT_URL
-        sync: false
-      - key: EXPLAINDROID_S3_REGION
-        value: auto
-      - key: EXPLAINDROID_S3_ACCESS_KEY_ID
-        sync: false
-      - key: EXPLAINDROID_S3_SECRET_ACCESS_KEY
-        sync: false
-
-  - type: keyvalue
-    name: explaindroid-queue
-    plan: starter
-    ipAllowList: []
-    maxmemoryPolicy: noeviction
 
 databases:
   - name: explaindroid-db
-    plan: basic-256mb
+    plan: free

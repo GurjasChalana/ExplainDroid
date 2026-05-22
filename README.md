@@ -66,12 +66,18 @@ sdkmanager "platforms;android-36"
 
 `render.yaml` defines:
 
-- `explaindroid`: the Flask web service
-- `explaindroid-worker`: the background worker
-- `explaindroid-queue`: Render Key Value for Redis/RQ
+- `explaindroid`: the Flask web service on Render's free instance type
 - `explaindroid-db`: Render Postgres for durable metadata
 
-For large production APK uploads, configure these secrets on both the web and worker services:
+The free Blueprint intentionally does not create a separate worker or Redis queue,
+because those resources can require billing details. When `REDIS_URL` is absent,
+the web service starts analysis in an in-process background thread after upload.
+This is useful for demos and small APKs, but it is less reliable than the
+web-plus-worker stack because free web services can sleep or be interrupted.
+For production use, add a worker service and Redis/Key Value queue.
+
+For Cloudflare R2 or another S3-compatible bucket, configure these secrets on
+the web service:
 
 ```bash
 EXPLAINDROID_S3_BUCKET=

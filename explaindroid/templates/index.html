@@ -117,7 +117,7 @@
       </div>
       <div class="env">
         <span class="pill">Storage: {{ storage_backend }}</span>
-        <span class="pill">Worker: {{ "Redis/RQ" if redis_enabled else "local polling" }}</span>
+        <span class="pill">Worker: {{ "Redis/RQ" if redis_enabled else "web inline" }}</span>
       </div>
     </header>
 
@@ -269,7 +269,7 @@
         const completeResponse = await fetch(created.complete_url, { method: "POST" });
         const completed = await completeResponse.json();
         if (!completeResponse.ok) throw new Error(completed.error || "Could not queue analysis.");
-        setStatus("Run queued. Keep the worker running.");
+        setStatus(completed.queue.inline ? "Analysis started." : "Run queued. Keep the worker running.");
         startPolling();
       } catch (error) {
         setStatus(error.message, true);

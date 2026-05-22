@@ -2,6 +2,7 @@ import importlib
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 
 class ExplainDroidMvpTests(unittest.TestCase):
@@ -164,6 +165,19 @@ class ExplainDroidMvpTests(unittest.TestCase):
         data = response.get_json()
         self.assertEqual(data["job"]["filename"], "sample.apk")
         self.assertEqual(data["upload"]["mode"], "local")
+
+    def test_queue_fallback_starts_inline_analysis(self):
+        app_module = importlib.import_module("explaindroid.app")
+        with mock.patch("explaindroid.queueing.enqueue_analysis", return_value={
+            "queued": False,
+            "reason": "REDIS_URL is not configured",
+        }), mock.patch("threading.Thread") as thread_class:
+            result = app_module.enqueue_or_run_analysis("job-inline")
+
+        self.assertFalse(result["queued"])
+        self.assertTrue(result["inline"])
+        thread_class.assert_called_once()
+        thread_class.return_value.start.assert_called_once()
 
     def test_legacy_report_json_renders(self):
         app_module = importlib.import_module("explaindroid.app")
