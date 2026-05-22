@@ -184,6 +184,17 @@ class ExplainDroidMvpTests(unittest.TestCase):
         self.assertEqual(response.content_type, "application/json")
         self.assertIn("Could not load jobs", response.get_json()["error"])
 
+    def test_index_renders_when_jobs_fail_to_load(self):
+        app_module = importlib.import_module("explaindroid.app")
+        app_module.app.config["TESTING"] = True
+        client = app_module.app.test_client()
+
+        with mock.patch("explaindroid.db.list_jobs", side_effect=RuntimeError("boom")):
+            response = client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Could not load jobs", response.data)
+
     def test_s3_upload_target_uses_server_upload(self):
         from explaindroid import config, storage
 

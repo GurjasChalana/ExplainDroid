@@ -95,6 +95,10 @@
     .report-link { color: var(--accent-strong); font-weight: 700; text-decoration: none; align-self: center; }
     .failed-note { color: var(--danger); }
     .tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .notice {
+      margin-bottom: 18px; border: 1px solid #fecdca; border-radius: 8px;
+      background: #fef3f2; color: var(--danger); padding: 12px 14px;
+    }
     select {
       min-height: 34px; border: 1px solid var(--line); border-radius: 6px;
       background: white; color: var(--ink); padding: 0 10px;
@@ -120,6 +124,10 @@
         <span class="pill">Worker: {{ "Redis/RQ" if redis_enabled else "web inline" }}</span>
       </div>
     </header>
+
+    {% if db_error %}
+      <div class="notice">{{ db_error }}</div>
+    {% endif %}
 
     <section class="layout">
       <div class="panel">

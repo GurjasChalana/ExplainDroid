@@ -148,8 +148,14 @@ def enqueue_or_run_analysis(job_id):
 
 @app.route("/")
 def index():
-    db.init_db()
-    jobs = db.list_jobs()
+    db_error = None
+    try:
+        db.init_db()
+        jobs = db.list_jobs()
+    except Exception as exc:
+        app.logger.exception("Could not load dashboard jobs")
+        db_error = f"Could not load jobs: {exc}"
+        jobs = []
     current_job = jobs[0] if jobs else None
     active_jobs = [
         job for job in jobs
@@ -176,6 +182,7 @@ def index():
         max_upload_mb=config.MAX_UPLOAD_MB,
         storage_backend=storage.backend_name(),
         redis_enabled=bool(config.REDIS_URL),
+        db_error=db_error,
     )
 
 
