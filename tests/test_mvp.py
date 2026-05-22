@@ -75,6 +75,14 @@ class ExplainDroidMvpTests(unittest.TestCase):
         job = self.db.next_queued_job()
         self.assertEqual(job["id"], "job-2")
 
+    def test_delete_job_removes_record(self):
+        self.db.create_job("job-1", "one.apk", "uploads/job-1/one.apk", "local", 1)
+
+        deleted = self.db.delete_job("job-1")
+
+        self.assertEqual(deleted, 1)
+        self.assertIsNone(self.db.get_job("job-1"))
+
     def test_parse_output_extracts_leak_count(self):
         from explaindroid.analyze import parse_output
 
@@ -193,6 +201,20 @@ class ExplainDroidMvpTests(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertEqual(response.content_type, "application/json")
         self.assertIn("Could not load jobs", response.get_json()["error"])
+
+    def test_api_delete_job_removes_record_and_cleanup_object(self):
+        app_module = importlib.import_module("explaindroid.app")
+        app_module.app.config["TESTING"] = True
+        client = app_module.app.test_client()
+        self.db.create_job("job-delete", "delete.apk", "uploads/job-delete/delete.apk", "local", 1)
+
+        with mock.patch("explaindroid.storage.delete_object") as delete_object:
+            response = client.delete("/api/jobs/job-delete")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()["deleted"])
+        self.assertIsNone(self.db.get_job("job-delete"))
+        delete_object.assert_called_once_with("uploads/job-delete/delete.apk")
 
     def test_index_renders_when_jobs_fail_to_load(self):
         app_module = importlib.import_module("explaindroid.app")

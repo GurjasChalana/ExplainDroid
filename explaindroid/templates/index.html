@@ -90,9 +90,14 @@
       display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 14px;
       border: 1px solid var(--line); border-radius: 8px; background: white; text-decoration: none;
     }
+    .run-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
     .run-row h3 { margin: 0 0 4px; font-size: 14px; overflow-wrap: anywhere; }
     .run-row p { margin: 8px 0 0; color: var(--muted); }
     .report-link { color: var(--accent-strong); font-weight: 700; text-decoration: none; align-self: center; }
+    .delete-button {
+      min-height: 32px; padding: 0 10px; border: 1px solid #fecdca;
+      background: #fff; color: var(--danger); font-weight: 700;
+    }
     .failed-note { color: var(--danger); }
     .tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .notice {
@@ -178,6 +183,7 @@
                 {% elif current_job.error_message %}
                   <p class="failed-note">{{ current_job.error_message }}</p>
                 {% endif %}
+                <button class="delete-button" onclick="deleteJob('{{ current_job.id }}')">Delete</button>
               </div>
             {% else %}
               <div class="empty">Upload an APK to start a run.</div>
@@ -212,11 +218,14 @@
                 </div>
                 <p class="{{ 'failed-note' if job.status in ['failed', 'timed_out'] else '' }}">{{ job.summary or job.error_message or "Waiting for analysis output." }}</p>
               </div>
-              {% if job.report %}
-                <a class="report-link" href="{{ url_for('report_detail', job_id=job.id) }}">Open</a>
-              {% else %}
-                <span class="badge {{ job.status }}">{{ job.status }}</span>
-              {% endif %}
+              <div class="run-actions">
+                {% if job.report %}
+                  <a class="report-link" href="{{ url_for('report_detail', job_id=job.id) }}">Open</a>
+                {% else %}
+                  <span class="badge {{ job.status }}">{{ job.status }}</span>
+                {% endif %}
+                <button class="delete-button" onclick="deleteJob('{{ job.id }}')">Delete</button>
+              </div>
             </article>
           {% else %}
             <div class="empty">No runs yet.</div>
@@ -300,6 +309,19 @@
       }
     }
 
+    async function deleteJob(jobId) {
+      if (!confirm("Delete this run and its stored report?")) return;
+      try {
+        const response = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not delete run.");
+        setStatus(data.cleanup_errors?.length ? data.cleanup_errors.join(" ") : "Run deleted.");
+        await refreshJobs();
+      } catch (error) {
+        setStatus(error.message || "Could not delete run.", true);
+      }
+    }
+
     function renderCurrent(job) {
       const target = document.getElementById("currentRun");
       if (!job) {
@@ -322,6 +344,7 @@
             <span>${escapeHtml(job.summary || job.error_message || "Waiting for analysis output.")}</span>
           </div>
           ${hasReport ? `<a class="report-link" href="/reports/${job.id}">Open report</a>` : failed}
+          <button class="delete-button" onclick="deleteJob('${escapeJs(job.id)}')">Delete</button>
         </div>`;
     }
 
@@ -362,7 +385,10 @@
             </div>
             <p class="${["failed", "timed_out"].includes(job.status) ? "failed-note" : ""}">${escapeHtml(job.summary || job.error_message || "Waiting for analysis output.")}</p>
           </div>
-          ${job.has_report ? `<a class="report-link" href="/reports/${job.id}">Open</a>` : `<span class="badge ${job.status}">${escapeHtml(job.status)}</span>`}
+          <div class="run-actions">
+            ${job.has_report ? `<a class="report-link" href="/reports/${job.id}">Open</a>` : `<span class="badge ${job.status}">${escapeHtml(job.status)}</span>`}
+            <button class="delete-button" onclick="deleteJob('${escapeJs(job.id)}')">Delete</button>
+          </div>
         </article>
       `).join("");
     }
@@ -387,6 +413,10 @@
       return String(value || "").replace(/[&<>"']/g, char => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
       }[char]));
+    }
+
+    function escapeJs(value) {
+      return String(value || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
     }
 
     function startPolling() {

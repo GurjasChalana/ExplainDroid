@@ -200,6 +200,16 @@ def update_job(job_id, **fields):
         )
 
 
+def delete_job(job_id):
+    q = ph()
+    with connect() as conn:
+        cursor = conn.execute(
+            f"DELETE FROM analysis_jobs WHERE id = {q}",
+            (job_id,)
+        )
+        return cursor.rowcount
+
+
 def mark_failed(job_id, status, message):
     update_job(
         job_id,

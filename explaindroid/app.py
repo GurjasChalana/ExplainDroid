@@ -228,6 +228,33 @@ def api_job(job_id):
         return jsonify({"error": f"Could not load job: {exc}"}), 500
 
 
+@app.route("/api/jobs/<job_id>", methods=["DELETE"])
+def api_delete_job(job_id):
+    job = db.get_job(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    cleanup_errors = []
+    try:
+        storage.delete_object(job["object_key"])
+    except Exception as exc:
+        cleanup_errors.append(f"APK cleanup failed: {exc}")
+
+    report_path = job.get("report_path")
+    if report_path and os.path.exists(report_path):
+        try:
+            os.remove(report_path)
+        except OSError as exc:
+            cleanup_errors.append(f"Report file cleanup failed: {exc}")
+
+    db.delete_job(job_id)
+    return jsonify({
+        "deleted": True,
+        "job_id": job_id,
+        "cleanup_errors": cleanup_errors,
+    })
+
+
 @app.route("/api/uploads", methods=["POST"])
 def create_upload():
     data = request.get_json(silent=True) or {}
