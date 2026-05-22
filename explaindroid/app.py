@@ -148,6 +148,7 @@ def enqueue_or_run_analysis(job_id):
 
 @app.route("/")
 def index():
+    db.init_db()
     jobs = db.list_jobs()
     current_job = jobs[0] if jobs else None
     active_jobs = [
@@ -199,15 +200,25 @@ def health():
 
 @app.route("/api/jobs")
 def api_jobs():
-    return jsonify({"jobs": [job_payload(job) for job in db.list_jobs()]})
+    try:
+        db.init_db()
+        return jsonify({"jobs": [job_payload(job) for job in db.list_jobs()]})
+    except Exception as exc:
+        app.logger.exception("Could not load jobs")
+        return jsonify({"error": f"Could not load jobs: {exc}"}), 500
 
 
 @app.route("/api/jobs/<job_id>")
 def api_job(job_id):
-    job = db.get_job(job_id)
-    if not job:
-        return jsonify({"error": "Job not found"}), 404
-    return jsonify({"job": job_payload(job), "report": job.get("report")})
+    try:
+        db.init_db()
+        job = db.get_job(job_id)
+        if not job:
+            return jsonify({"error": "Job not found"}), 404
+        return jsonify({"job": job_payload(job), "report": job.get("report")})
+    except Exception as exc:
+        app.logger.exception("Could not load job %s", job_id)
+        return jsonify({"error": f"Could not load job: {exc}"}), 500
 
 
 @app.route("/api/uploads", methods=["POST"])

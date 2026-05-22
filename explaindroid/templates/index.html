@@ -270,8 +270,15 @@
     }
 
     async function refreshJobs() {
-      const response = await fetch("/api/jobs");
-      const data = await response.json();
+      let data;
+      try {
+        const response = await fetch("/api/jobs");
+        data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not refresh jobs.");
+      } catch (error) {
+        setStatus(error.message || "Could not refresh jobs.", true);
+        return;
+      }
       document.getElementById("activeCount").textContent = data.jobs.filter(job => !terminal.has(job.status)).length;
       document.getElementById("runCount").textContent = data.jobs.length;
       window.latestJobs = data.jobs;
