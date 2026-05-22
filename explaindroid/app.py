@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 import threading
 import uuid
 
@@ -234,8 +233,8 @@ def create_upload():
         filename,
         config.MAX_UPLOAD_BYTES,
     )
-    if upload_target["mode"] == "local":
-        upload_target["url"] = url_for("upload_local_blob", job_id=job_id)
+    if upload_target["mode"] in ("local", "server"):
+        upload_target["url"] = url_for("upload_blob", job_id=job_id)
 
     return jsonify({
         "job": job_payload(db.get_job(job_id)),
@@ -246,29 +245,28 @@ def create_upload():
 
 
 @app.route("/api/uploads/<job_id>/blob", methods=["POST", "PUT"])
-def upload_local_blob(job_id):
+def upload_blob(job_id):
     job = db.get_job(job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
-    if storage.backend_name() != "local":
-        return jsonify({"error": "Local upload endpoint is disabled"}), 400
 
     content_length = request.content_length or 0
     if content_length > config.MAX_UPLOAD_BYTES:
         return jsonify({"error": f"APK is too large. Limit is {config.MAX_UPLOAD_MB}MB."}), 413
 
-    path = storage.local_path_for_key(job["object_key"])
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    if "apk" in request.files:
-        request.files["apk"].save(path)
-    else:
-        with open(path, "wb") as f:
-            shutil.copyfileobj(request.stream, f)
-    size_bytes = os.path.getsize(path)
+    upload = request.files.get("apk")
+    if not upload:
+        return jsonify({"error": "Missing APK upload."}), 400
+
+    size_bytes = content_length or 0
     error = validate_apk(job["filename"], size_bytes)
     if error:
-        os.remove(path)
         return jsonify({"error": error}), 400
+
+    storage.save_upload(job["object_key"], upload)
+    if storage.backend_name() == "local":
+        size_bytes = os.path.getsize(storage.local_path_for_key(job["object_key"]))
+
     db.update_job(job_id, size_bytes=size_bytes)
     return jsonify({"job": job_payload(db.get_job(job_id))})
 

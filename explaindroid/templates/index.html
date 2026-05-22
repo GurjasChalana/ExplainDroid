@@ -250,20 +250,11 @@
         if (!createResponse.ok) throw new Error(created.error || "Could not create upload.");
 
         setStatus("Uploading APK...");
-        if (created.upload.mode === "s3_put") {
-          const uploadResponse = await fetch(created.upload.url, {
-            method: "PUT",
-            headers: { "Content-Type": "application/vnd.android.package-archive" },
-            body: file
-          });
-          if (!uploadResponse.ok) throw new Error("Object storage upload failed.");
-        } else {
-          const formData = new FormData();
-          formData.append("apk", file);
-          const uploadResponse = await fetch(created.upload.url, { method: "POST", body: formData });
-          const uploadData = await uploadResponse.json();
-          if (!uploadResponse.ok) throw new Error(uploadData.error || "Local upload failed.");
-        }
+        const formData = new FormData();
+        formData.append("apk", file);
+        const uploadResponse = await fetch(created.upload.url, { method: "POST", body: formData });
+        const uploadData = await uploadResponse.json();
+        if (!uploadResponse.ok) throw new Error(uploadData.error || "Upload failed.");
 
         setStatus("Queueing analysis...");
         const completeResponse = await fetch(created.complete_url, { method: "POST" });

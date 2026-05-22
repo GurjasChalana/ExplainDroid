@@ -172,20 +172,18 @@ class ExplainDroidMvpTests(unittest.TestCase):
         self.assertEqual(data["job"]["filename"], "sample.apk")
         self.assertEqual(data["upload"]["mode"], "local")
 
-    def test_s3_upload_target_uses_presigned_put(self):
+    def test_s3_upload_target_uses_server_upload(self):
         from explaindroid import config, storage
 
         config.S3_BUCKET = "explaindroid-uploads"
         config.S3_ACCESS_KEY_ID = "access-key"
         config.S3_SECRET_ACCESS_KEY = "secret-key"
 
-        with mock.patch("explaindroid.storage.s3_client") as client_factory:
-            client_factory.return_value.generate_presigned_url.return_value = "https://example.com/upload"
-            target = storage.create_upload_target("uploads/job/app.apk", "app.apk", 1024)
+        target = storage.create_upload_target("uploads/job/app.apk", "app.apk", 1024)
 
-        self.assertEqual(target["mode"], "s3_put")
-        self.assertEqual(target["method"], "PUT")
-        client_factory.return_value.generate_presigned_url.assert_called_once()
+        self.assertEqual(target["mode"], "server")
+        self.assertEqual(target["method"], "POST")
+        self.assertIsNone(target["url"])
 
     def test_queue_fallback_starts_inline_analysis(self):
         app_module = importlib.import_module("explaindroid.app")

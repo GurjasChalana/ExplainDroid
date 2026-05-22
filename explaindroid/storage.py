@@ -42,20 +42,11 @@ def s3_client():
 
 def create_upload_target(key, filename, max_bytes):
     if s3_enabled():
-        url = s3_client().generate_presigned_url(
-            "put_object",
-            Params={
-                "Bucket": config.S3_BUCKET,
-                "Key": key,
-                "ContentType": "application/vnd.android.package-archive",
-            },
-            ExpiresIn=3600,
-        )
         return {
-            "mode": "s3_put",
-            "url": url,
+            "mode": "server",
+            "url": None,
             "fields": {},
-            "method": "PUT",
+            "method": "POST",
         }
 
     return {
@@ -71,6 +62,19 @@ def save_local_upload(key, file_storage):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     file_storage.save(path)
     return os.path.getsize(path)
+
+
+def save_upload(key, file_storage):
+    if s3_enabled():
+        file_storage.stream.seek(0)
+        s3_client().upload_fileobj(
+            file_storage.stream,
+            config.S3_BUCKET,
+            key,
+            ExtraArgs={"ContentType": "application/vnd.android.package-archive"},
+        )
+        return 0
+    return save_local_upload(key, file_storage)
 
 
 def download_to_file(key, destination):
