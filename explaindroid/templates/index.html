@@ -250,12 +250,12 @@
         if (!createResponse.ok) throw new Error(created.error || "Could not create upload.");
 
         setStatus("Uploading APK...");
-        if (created.upload.mode === "s3_post") {
-          const formData = new FormData();
-          Object.entries(created.upload.fields).forEach(([key, value]) => formData.append(key, value));
-          formData.append("Content-Type", "application/vnd.android.package-archive");
-          formData.append("file", file);
-          const uploadResponse = await fetch(created.upload.url, { method: "POST", body: formData });
+        if (created.upload.mode === "s3_put") {
+          const uploadResponse = await fetch(created.upload.url, {
+            method: "PUT",
+            headers: { "Content-Type": "application/vnd.android.package-archive" },
+            body: file
+          });
           if (!uploadResponse.ok) throw new Error("Object storage upload failed.");
         } else {
           const formData = new FormData();

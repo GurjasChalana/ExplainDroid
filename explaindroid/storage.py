@@ -42,22 +42,20 @@ def s3_client():
 
 def create_upload_target(key, filename, max_bytes):
     if s3_enabled():
-        fields = [["content-length-range", 1, max_bytes]]
-        post = s3_client().generate_presigned_post(
-            Bucket=config.S3_BUCKET,
-            Key=key,
-            Fields={"Content-Type": "application/vnd.android.package-archive"},
-            Conditions=[
-                {"Content-Type": "application/vnd.android.package-archive"},
-                *fields,
-            ],
+        url = s3_client().generate_presigned_url(
+            "put_object",
+            Params={
+                "Bucket": config.S3_BUCKET,
+                "Key": key,
+                "ContentType": "application/vnd.android.package-archive",
+            },
             ExpiresIn=3600,
         )
         return {
-            "mode": "s3_post",
-            "url": post["url"],
-            "fields": post["fields"],
-            "method": "POST",
+            "mode": "s3_put",
+            "url": url,
+            "fields": {},
+            "method": "PUT",
         }
 
     return {
