@@ -3,7 +3,7 @@ services:
     name: explaindroid
     runtime: docker
     plan: starter
-    startCommand: python -m explaindroid.app
+    dockerCommand: python -m explaindroid.app
     healthCheckPath: /health
     envVars:
       - key: EXPLAINDROID_DATA_DIR
@@ -56,7 +56,7 @@ services:
     name: explaindroid-worker
     runtime: docker
     plan: starter
-    startCommand: python -m explaindroid.worker
+    dockerCommand: python -m explaindroid.worker
     maxShutdownDelaySeconds: 300
     envVars:
       - key: EXPLAINDROID_DATA_DIR
