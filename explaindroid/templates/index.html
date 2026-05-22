@@ -2,183 +2,395 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ExplainDroid</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: monospace; background: #f0f0f0; padding: 32px; color: #222; }
-    h1 { font-size: 1.4rem; margin-bottom: 4px; }
-    .subtitle { color: #666; font-size: 0.85rem; margin-bottom: 32px; }
-    .upload-box { background: white; border: 2px dashed #ccc; border-radius: 8px; padding: 32px; text-align: center; margin-bottom: 32px; }
-    .upload-box h2 { font-size: 1rem; margin-bottom: 8px; }
-    .upload-box p { color: #666; font-size: 0.85rem; margin-bottom: 16px; }
-    .upload-box input { margin-bottom: 12px; }
-    .upload-box button { padding: 8px 20px; background: #333; color: white; border: none; border-radius: 4px; cursor: pointer; font-family: monospace; }
-    #spinner { display: none; margin-top: 12px; color: #666; font-size: 0.85rem; }
-    #uploadError { display: none; margin-top: 12px; color: red; font-size: 0.85rem; }
-    .app-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
-    .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .app-name { font-size: 1rem; font-weight: bold; }
-    .risk-badge { font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: bold; }
-    .r1, .r2 { background: #e0ffe0; color: #060; }
-    .r3 { background: #fff8e0; color: #a06000; }
-    .r4 { background: #ffe8cc; color: #c04000; }
-    .r5, .r6 { background: #ffe0e0; color: #c00; }
-    .summary { font-size: 0.85rem; color: #444; line-height: 1.6; background: #fff8e1; border-left: 4px solid #f0a500; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 4px 4px 0; }
-    .leak-card { border: 1px solid #ddd; border-radius: 6px; padding: 16px; margin-bottom: 12px; background: #fafafa; }
-    .leak-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .leak-type { font-size: 0.78rem; color: #666; }
-    .graph { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-    .node { border-radius: 6px; padding: 10px 14px; min-width: 120px; max-width: 180px; }
-    .node-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; opacity: 0.7; }
-    .node-category { font-size: 11px; font-weight: bold; margin-bottom: 3px; }
-    .node-sig { font-size: 10px; opacity: 0.7; word-break: break-all; }
-    .node-source { border: 1px solid #90caf9; background: #e3f2fd; color: #0d47a1; }
-    .node-intermediate { border: 1px solid #ccc; background: #f5f5f5; color: #444; }
-    .node-sink { border: 1px solid #ef9a9a; background: #ffebee; color: #b71c1c; }
-    .node-risk-r1, .node-risk-r2 { border: 1px solid #a5d6a7; background: #e8f5e9; color: #1b5e20; }
-    .node-risk-r3 { border: 1px solid #ffe082; background: #fffde7; color: #f57f17; }
-    .node-risk-r4 { border: 1px solid #ffcc80; background: #fff3e0; color: #e65100; }
-    .node-risk-r5, .node-risk-r6 { border: 1px solid #ef9a9a; background: #ffebee; color: #b71c1c; }
-    .arrow { color: #999; font-size: 1.2rem; }
-    .divider { border: none; border-top: 1px solid #eee; margin: 12px 0; }
-    .scores { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.78rem; }
-    .score-row { display: flex; justify-content: space-between; color: #666; }
-    .score-row span:last-child { font-weight: bold; color: #333; }
-    .no-leaks { color: #060; font-size: 0.85rem; background: #e0ffe0; padding: 12px; border-radius: 4px; }
+    :root {
+      color-scheme: light;
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --line: #d9e0e8;
+      --text: #172033;
+      --muted: #667085;
+      --accent: #0f766e;
+      --accent-strong: #0b5f59;
+      --ink: #24324a;
+      --blue: #1d4ed8;
+      --amber: #b54708;
+      --danger: #b42318;
+      --ok: #067647;
+      --lavender: #eef2ff;
+      --mint: #e8f6f3;
+      --peach: #fff1e7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f7f9fb 0, var(--bg) 340px);
+      color: var(--text);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { color: inherit; }
+    .shell { max-width: 1180px; margin: 0 auto; padding: 28px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+    .brand h1 { margin: 0; font-size: 28px; letter-spacing: 0; }
+    .brand p { margin: 5px 0 0; color: var(--muted); max-width: 680px; }
+    .env { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .pill {
+      display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px;
+      border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--muted);
+      font-size: 12px; white-space: nowrap;
+    }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr); gap: 18px; align-items: start; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+    .panel-header { padding: 18px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+    .panel-header h2 { margin: 0; font-size: 15px; }
+    .panel-body { padding: 20px; }
+    .upload-zone {
+      border: 1px dashed #91a3b8; border-radius: 8px; padding: 22px;
+      background: var(--panel-soft); display: grid; gap: 14px;
+    }
+    .upload-zone strong { font-size: 17px; }
+    .upload-zone p, .status-text { color: var(--muted); margin: 4px 0 0; }
+    .upload-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    input[type=file] {
+      min-height: 42px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: white;
+      flex: 1 1 260px; color: var(--ink);
+    }
+    button {
+      min-height: 42px; padding: 0 16px; border: 0; border-radius: 6px;
+      background: var(--accent); color: white; font-weight: 700; cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .error { color: var(--danger); }
+    .run-card { display: grid; gap: 14px; }
+    .run-title { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .run-title h3 { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+    .meta { color: var(--muted); font-size: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px;
+      border-radius: 999px; font-size: 12px; font-weight: 700; background: #eef2f6; color: #344054;
+      white-space: nowrap;
+    }
+    .completed { background: #ecfdf3; color: var(--ok); }
+    .failed, .timed_out { background: #fef3f2; color: var(--danger); }
+    .running_flowdroid, .parsing, .summarizing, .queued, .uploading, .created { background: #eff8ff; color: var(--blue); }
+    .risk-r1, .risk-r2 { background: #ecfdf3; color: var(--ok); }
+    .risk-r3 { background: #fffaeb; color: var(--amber); }
+    .risk-r4 { background: #fff4ed; color: #c2410c; }
+    .risk-r5 { background: #fef3f2; color: var(--danger); }
+    .risk-r6 { background: #7f1d1d; color: #fff7ed; }
+    .empty {
+      color: var(--muted); padding: 20px; text-align: center; border: 1px dashed var(--line);
+      border-radius: 8px; background: var(--panel-soft);
+    }
+    .runs { display: grid; gap: 10px; }
+    .run-row {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 14px;
+      border: 1px solid var(--line); border-radius: 8px; background: white; text-decoration: none;
+    }
+    .run-row h3 { margin: 0 0 4px; font-size: 14px; overflow-wrap: anywhere; }
+    .run-row p { margin: 8px 0 0; color: var(--muted); }
+    .report-link { color: var(--accent-strong); font-weight: 700; text-decoration: none; align-self: center; }
+    .failed-note { color: var(--danger); }
+    .tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    select {
+      min-height: 34px; border: 1px solid var(--line); border-radius: 6px;
+      background: white; color: var(--ink); padding: 0 10px;
+    }
+    @media (max-width: 900px) {
+      .shell { padding: 18px; }
+      .layout { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .env { justify-content: flex-start; }
+      .run-row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-
-<h1>ExplainDroid</h1>
-<p class="subtitle">Android privacy leak explanations</p>
-
-<div class="upload-box">
-  <h2>Analyze an APK</h2>
-  <p>Upload an Android APK file to scan for privacy leaks</p>
-  <input type="file" id="apkFile" accept=".apk"><br>
-  <button onclick="uploadAPK()">Run Analysis</button>
-  <div id="spinner">Analyzing... this takes about 30 seconds ⏳</div>
-  <div id="uploadError"></div>
-</div>
-
-{% for report in reports %}
-<div class="app-card">
-
-  <div class="app-header">
-    <span class="app-name">{{ report.app }}</span>
-    {% if report.leak_count > 0 %}
-      {% set max_level = namespace(val='R1') %}
-      {% for leak in report.leaks %}
-        {% if leak.risk_node.level > max_level.val %}
-          {% set max_level.val = leak.risk_node.level %}
-        {% endif %}
-      {% endfor %}
-      <span class="risk-badge {{ max_level.val | lower }}">highest risk: {{ max_level.val }}</span>
-    {% else %}
-      <span class="risk-badge r1">clean</span>
-    {% endif %}
-  </div>
-
-  {% if report.summary %}
-  <div class="summary">{{ report.summary }}</div>
-  {% endif %}
-
-  {% if report.leaks %}
-    {% for leak in report.leaks %}
-    <div class="leak-card">
-
-      <div class="leak-header">
-        <span class="risk-badge {{ leak.risk_node.level | lower }}">{{ leak.risk_node.level }} {{ leak.risk_node.label }}</span>
-        <span class="leak-type">{{ leak.source_node.data_category }} → {{ leak.sink_node.sink_category }}</span>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <h1>ExplainDroid</h1>
+        <p>Upload an APK, watch the analyzer move through the run, then open a mapped privacy-flow report.</p>
       </div>
+      <div class="env">
+        <span class="pill">Storage: {{ storage_backend }}</span>
+        <span class="pill">Worker: {{ "Redis/RQ" if redis_enabled else "local polling" }}</span>
+      </div>
+    </header>
 
-      <div class="graph">
-        <div class="node node-source">
-          <div class="node-label">source</div>
-          <div class="node-category">{{ leak.source_node.data_category }}</div>
-          <div class="node-sig">{{ leak.source_node.signature.split(':')[-1].strip() }}</div>
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Run an APK</h2>
+          <span class="pill">Max {{ max_upload_mb }}MB</span>
         </div>
-        <span class="arrow">→</span>
-        <div class="node node-intermediate">
-          <div class="node-label">via</div>
-          <div class="node-category">{{ leak.intermediate_node.method.split(':')[-1].strip()[:30] }}</div>
-          <div class="node-sig">{{ leak.intermediate_node.method.split(':')[0].split('.')[-1] }}</div>
-        </div>
-        <span class="arrow">→</span>
-        <div class="node node-sink">
-          <div class="node-label">sink</div>
-          <div class="node-category">{{ leak.sink_node.sink_category }}</div>
-          <div class="node-sig">{{ leak.sink_node.signature.split(':')[-1].strip()[:30] }}</div>
-        </div>
-        <span class="arrow">→</span>
-        <div class="node node-risk-{{ leak.risk_node.level | lower }}">
-          <div class="node-label">risk</div>
-          <div class="node-category">{{ leak.risk_node.level }} {{ leak.risk_node.label }}</div>
-          <div class="node-sig">score: {{ leak.risk_node.total }}</div>
+        <div class="panel-body">
+          <div class="upload-zone">
+            <div>
+              <strong>Choose an Android package</strong>
+              <p>The worker runs FlowDroid asynchronously and keeps the browser free while analysis runs.</p>
+            </div>
+            <div class="upload-row">
+              <input type="file" id="apkFile" accept=".apk">
+              <button id="uploadButton" onclick="startUpload()">Analyze</button>
+            </div>
+            <div id="uploadStatus" class="status-text"></div>
+          </div>
         </div>
       </div>
 
-      <hr class="divider">
+      <aside class="panel">
+        <div class="panel-header">
+          <h2>Current run</h2>
+          <span class="pill" id="activeCount">{{ active_jobs|length }}</span>
+        </div>
+        <div class="panel-body">
+          <div id="currentRun">
+            {% if current_job %}
+              <div class="run-card">
+                <div class="run-title">
+                  <div>
+                    <h3>{{ current_job.filename }}</h3>
+                    <div class="meta">
+                      <span>{{ current_job.size_bytes|filesizeformat }}</span>
+                      <span>{{ current_job.leak_count }} leaks</span>
+                    </div>
+                  </div>
+                  <span class="badge {{ current_job.status }}">{{ current_job.status }}</span>
+                </div>
+                <div class="meta">
+                  <span class="badge risk-{{ (current_job.highest_risk or 'R1')|lower }}">Risk {{ current_job.highest_risk or "R1" }}</span>
+                  <span>{{ current_job.summary or current_job.error_message or "Waiting for analysis output." }}</span>
+                </div>
+                {% if current_job.report %}
+                  <a class="report-link" href="{{ url_for('report_detail', job_id=current_job.id) }}">Open report</a>
+                {% elif current_job.error_message %}
+                  <p class="failed-note">{{ current_job.error_message }}</p>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="empty">Upload an APK to start a run.</div>
+            {% endif %}
+          </div>
+        </div>
+      </aside>
+    </section>
 
-      <div class="scores">
-        {% if leak.risk_node.scores.sensitive_source > 0 %}
-        <div class="score-row"><span>Sensitive source</span><span>+{{ leak.risk_node.scores.sensitive_source }}</span></div>
-        {% endif %}
-        {% if leak.risk_node.scores.local_storage > 0 %}
-        <div class="score-row"><span>Local storage</span><span>+{{ leak.risk_node.scores.local_storage }}</span></div>
-        {% endif %}
-        {% if leak.risk_node.scores.network > 0 %}
-        <div class="score-row"><span>Network/IPC</span><span>+{{ leak.risk_node.scores.network }}</span></div>
-        {% endif %}
-        {% if leak.risk_node.scores.multiple_sinks > 0 %}
-        <div class="score-row"><span>Multiple sinks</span><span>+{{ leak.risk_node.scores.multiple_sinks }}</span></div>
-        {% endif %}
-        <div class="score-row"><span>Total</span><span>{{ leak.risk_node.total }}</span></div>
+    <section class="panel" style="margin-top: 18px;">
+      <div class="panel-header">
+        <h2>Recent runs</h2>
+        <div class="tools">
+          <select id="sortRuns" onchange="renderRuns()">
+            <option value="newest">Newest First</option>
+            <option value="risk">Highest Risk</option>
+            <option value="leaks">Most Leaks</option>
+          </select>
+          <span class="pill" id="runCount">{{ jobs|length }}</span>
+        </div>
       </div>
+      <div class="panel-body">
+        <div class="runs" id="recentRuns">
+          {% for job in jobs %}
+            <article class="run-row" data-risk="{{ job.highest_risk or 'R1' }}" data-leaks="{{ job.leak_count or 0 }}" data-created="{{ job.created_at }}">
+              <div>
+                <h3>{{ job.filename }}</h3>
+                <div class="meta">
+                  <span>{{ job.size_bytes|filesizeformat }}</span>
+                  <span>{{ job.leak_count }} leaks</span>
+                  <span class="badge risk-{{ (job.highest_risk or 'R1')|lower }}">Risk {{ job.highest_risk or "R1" }}</span>
+                </div>
+                <p class="{{ 'failed-note' if job.status in ['failed', 'timed_out'] else '' }}">{{ job.summary or job.error_message or "Waiting for analysis output." }}</p>
+              </div>
+              {% if job.report %}
+                <a class="report-link" href="{{ url_for('report_detail', job_id=job.id) }}">Open</a>
+              {% else %}
+                <span class="badge {{ job.status }}">{{ job.status }}</span>
+              {% endif %}
+            </article>
+          {% else %}
+            <div class="empty">No runs yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  </main>
 
-    </div>
-    {% endfor %}
-  {% else %}
-    <div class="no-leaks">No leaks detected</div>
-  {% endif %}
+  <script>
+    const maxUploadBytes = {{ max_upload_mb }} * 1024 * 1024;
+    const terminal = new Set(["completed", "failed", "timed_out"]);
+    window.latestJobs = {{ jobs_payload|tojson }};
+    let pollTimer = null;
 
-</div>
-{% endfor %}
+    function setStatus(message, isError = false) {
+      const node = document.getElementById("uploadStatus");
+      node.textContent = message;
+      node.className = "status-text" + (isError ? " error" : "");
+    }
 
-<script>
-function uploadAPK() {
-  const file = document.getElementById('apkFile').files[0];
-  if (!file) { alert('Please select an APK file first'); return; }
-  const formData = new FormData();
-  formData.append('apk', file);
-  document.getElementById('spinner').style.display = 'block';
-  document.getElementById('uploadError').style.display = 'none';
-  fetch('/upload', { method: 'POST', body: formData })
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) {
-        document.getElementById('uploadError').innerText = data.error;
-        document.getElementById('uploadError').style.display = 'block';
-        document.getElementById('spinner').style.display = 'none';
+    async function startUpload() {
+      const fileInput = document.getElementById("apkFile");
+      const button = document.getElementById("uploadButton");
+      const file = fileInput.files[0];
+      if (!file) return setStatus("Select an APK first.", true);
+      if (!file.name.toLowerCase().endsWith(".apk")) return setStatus("Only .apk files are supported.", true);
+      if (file.size > maxUploadBytes) return setStatus("APK exceeds the configured size limit.", true);
+
+      button.disabled = true;
+      setStatus("Creating run...");
+      try {
+        const createResponse = await fetch("/api/uploads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: file.name, size_bytes: file.size })
+        });
+        const created = await createResponse.json();
+        if (!createResponse.ok) throw new Error(created.error || "Could not create upload.");
+
+        setStatus("Uploading APK...");
+        if (created.upload.mode === "s3_post") {
+          const formData = new FormData();
+          Object.entries(created.upload.fields).forEach(([key, value]) => formData.append(key, value));
+          formData.append("Content-Type", "application/vnd.android.package-archive");
+          formData.append("file", file);
+          const uploadResponse = await fetch(created.upload.url, { method: "POST", body: formData });
+          if (!uploadResponse.ok) throw new Error("Object storage upload failed.");
+        } else {
+          const formData = new FormData();
+          formData.append("apk", file);
+          const uploadResponse = await fetch(created.upload.url, { method: "POST", body: formData });
+          const uploadData = await uploadResponse.json();
+          if (!uploadResponse.ok) throw new Error(uploadData.error || "Local upload failed.");
+        }
+
+        setStatus("Queueing analysis...");
+        const completeResponse = await fetch(created.complete_url, { method: "POST" });
+        const completed = await completeResponse.json();
+        if (!completeResponse.ok) throw new Error(completed.error || "Could not queue analysis.");
+        setStatus("Run queued. Keep the worker running.");
+        startPolling();
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function refreshJobs() {
+      const response = await fetch("/api/jobs");
+      const data = await response.json();
+      document.getElementById("activeCount").textContent = data.jobs.filter(job => !terminal.has(job.status)).length;
+      document.getElementById("runCount").textContent = data.jobs.length;
+      window.latestJobs = data.jobs;
+      renderCurrent(data.jobs[0]);
+      renderRuns();
+      if (data.jobs.some(job => !terminal.has(job.status))) return;
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        location.reload();
+      }
+    }
+
+    function renderCurrent(job) {
+      const target = document.getElementById("currentRun");
+      if (!job) {
+        target.innerHTML = '<div class="empty">Upload an APK to start a run.</div>';
         return;
       }
-      pollStatus(data.job_id);
-    });
-}
+      const hasReport = job.has_report;
+      const failed = job.error_message ? `<p class="failed-note">${escapeHtml(job.error_message)}</p>` : "";
+      target.innerHTML = `
+        <div class="run-card">
+          <div class="run-title">
+            <div>
+              <h3>${escapeHtml(job.filename)}</h3>
+              <div class="meta"><span>${formatBytes(job.size_bytes)}</span><span>${job.leak_count || 0} leaks</span></div>
+            </div>
+            <span class="badge ${job.status}">${escapeHtml(job.status)}</span>
+          </div>
+          <div class="meta">
+            <span class="badge risk-${(job.highest_risk || "R1").toLowerCase()}">Risk ${escapeHtml(job.highest_risk || "R1")}</span>
+            <span>${escapeHtml(job.summary || job.error_message || "Waiting for analysis output.")}</span>
+          </div>
+          ${hasReport ? `<a class="report-link" href="/reports/${job.id}">Open report</a>` : failed}
+        </div>`;
+    }
 
-function pollStatus(jobId) {
-  fetch('/status/' + jobId)
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === 'done') {
-        location.reload();
-      } else if (data.status === 'error') {
-        document.getElementById('spinner').innerText = 'Analysis failed. Check server logs.';
-      } else {
-        setTimeout(() => pollStatus(jobId), 2000);
+    function renderRuns() {
+      const target = document.getElementById("recentRuns");
+      const jobs = window.latestJobs || Array.from(document.querySelectorAll(".run-row")).map(row => ({
+        id: row.querySelector(".report-link")?.getAttribute("href")?.split("/").pop(),
+        filename: row.querySelector("h3")?.textContent || "",
+        size_bytes: 0,
+        status: "",
+        highest_risk: row.dataset.risk || "R1",
+        leak_count: Number(row.dataset.leaks || 0),
+        created_at: row.dataset.created || "",
+        summary: row.querySelector("p")?.textContent || "",
+        has_report: Boolean(row.querySelector(".report-link"))
+      }));
+      const sort = document.getElementById("sortRuns").value;
+      const sorted = jobs
+        .slice()
+        .sort((a, b) => {
+          if (sort === "risk") return riskValue(b.highest_risk || "R1") - riskValue(a.highest_risk || "R1");
+          if (sort === "leaks") return (b.leak_count || 0) - (a.leak_count || 0);
+          return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+        });
+      document.getElementById("runCount").textContent = sorted.length;
+      if (sorted.length === 0) {
+        target.innerHTML = '<div class="empty">No runs yet.</div>';
+        return;
       }
-    });
-}
-</script>
+      target.innerHTML = sorted.map(job => `
+        <article class="run-row" data-risk="${escapeHtml(job.highest_risk || "R1")}" data-leaks="${job.leak_count || 0}" data-created="${escapeHtml(job.created_at || "")}">
+          <div>
+            <h3>${escapeHtml(job.filename)}</h3>
+            <div class="meta">
+              <span>${formatBytes(job.size_bytes)}</span>
+              <span>${job.leak_count || 0} leaks</span>
+              <span class="badge risk-${(job.highest_risk || "R1").toLowerCase()}">Risk ${escapeHtml(job.highest_risk || "R1")}</span>
+            </div>
+            <p class="${["failed", "timed_out"].includes(job.status) ? "failed-note" : ""}">${escapeHtml(job.summary || job.error_message || "Waiting for analysis output.")}</p>
+          </div>
+          ${job.has_report ? `<a class="report-link" href="/reports/${job.id}">Open</a>` : `<span class="badge ${job.status}">${escapeHtml(job.status)}</span>`}
+        </article>
+      `).join("");
+    }
+
+    function riskValue(risk) {
+      return Number(String(risk || "R1").replace("R", "")) || 1;
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes) return "size pending";
+      const units = ["B", "KB", "MB", "GB"];
+      let value = bytes;
+      let unit = 0;
+      while (value >= 1024 && unit < units.length - 1) {
+        value = value / 1024;
+        unit++;
+      }
+      return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      }[char]));
+    }
+
+    function startPolling() {
+      if (!pollTimer) pollTimer = setInterval(refreshJobs, 2500);
+      refreshJobs();
+    }
+
+    {% if active_jobs %}
+    startPolling();
+    {% endif %}
+  </script>
 </body>
 </html>

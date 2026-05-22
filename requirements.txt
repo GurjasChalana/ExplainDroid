@@ -1,2 +1,7 @@
 Flask>=3.0,<4
 groq>=0.9,<1
+boto3>=1.34,<2
+psycopg[binary]>=3.2,<4
+python-dotenv>=1.0,<2
+redis>=5,<6
+rq>=1.16,<2

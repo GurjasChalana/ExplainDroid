@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ job.filename }} - ExplainDroid</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --line: #d9e0e8;
+      --text: #172033;
+      --muted: #667085;
+      --accent: #0f766e;
+      --accent-strong: #0b5f59;
+      --source: #e8f6f3;
+      --method: #eef2ff;
+      --sink: #fff1e7;
+      --context: #f1f5f9;
+      --risk: #fff7ed;
+      --code: #344054;
+      --ok: #067647;
+      --amber: #b54708;
+      --danger: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f7f9fb 0, var(--bg) 340px);
+      color: var(--text);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .shell { max-width: 1180px; margin: 0 auto; padding: 28px; }
+    .back { color: var(--accent-strong); text-decoration: none; font-weight: 700; }
+    .header { margin: 18px 0 22px; display: grid; gap: 14px; }
+    h1 { margin: 0; font-size: 26px; overflow-wrap: anywhere; }
+    .summary { max-width: 840px; color: var(--muted); margin: 0; }
+    .note { max-width: 840px; color: #475467; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    .metric { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+    .metric span { color: var(--muted); font-size: 12px; }
+    .metric strong { display: block; margin-top: 6px; font-size: 22px; overflow-wrap: anywhere; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+    .panel h2 { margin: 0; font-size: 15px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+    .panel-body { padding: 20px; }
+    .flows { display: grid; gap: 16px; }
+    .flow {
+      border: 1px solid var(--line); border-radius: 8px; background: white; overflow: hidden;
+    }
+    .flow-head {
+      padding: 14px 16px; border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; gap: 14px; align-items: center;
+      background: var(--panel-soft);
+    }
+    .flow-head strong { overflow-wrap: anywhere; }
+    .risk-pill {
+      display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px;
+      border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap;
+      background: #eef2f6; color: #344054;
+    }
+    .risk-r1, .risk-r2 { background: #ecfdf3; color: var(--ok); }
+    .risk-r3 { background: #fffaeb; color: var(--amber); }
+    .risk-r4 { background: #fff4ed; color: #c2410c; }
+    .risk-r5 { background: #fef3f2; color: var(--danger); }
+    .risk-r6 { background: #7f1d1d; color: #fff7ed; }
+    .map {
+      padding: 18px; display: grid;
+      grid-template-columns: minmax(150px, 0.9fr) 24px minmax(190px, 1.15fr) 24px minmax(150px, 0.9fr) 24px minmax(230px, 1.35fr);
+      gap: 10px; align-items: stretch;
+    }
+    .node {
+      border: 1px solid var(--line); border-radius: 8px; padding: 14px; min-height: 132px;
+      display: grid; gap: 8px; align-content: start;
+    }
+    .node.source { background: var(--source); }
+    .node.method { background: var(--method); }
+    .node.sink { background: var(--sink); }
+    .node.risk { background: var(--risk); }
+    .context-node {
+      margin: 0 18px 12px; border: 1px solid var(--line); border-radius: 8px;
+      padding: 14px; background: var(--context); display: grid; gap: 8px;
+    }
+    .context-node span { color: var(--muted); text-transform: uppercase; font-size: 11px; font-weight: 800; }
+    .context-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .context-chip {
+      border: 1px solid var(--line); border-radius: 8px; background: white; padding: 10px;
+      color: #475467; overflow-wrap: anywhere;
+    }
+    .context-chip strong { color: var(--text); display: block; margin-bottom: 4px; }
+    .node span { color: var(--muted); text-transform: uppercase; font-size: 11px; font-weight: 800; }
+    .node strong { font-size: 15px; overflow-wrap: anywhere; }
+    .node p { margin: 0; color: #475467; overflow-wrap: anywhere; }
+    .technical-hint {
+      margin-top: 2px; color: var(--code); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px; line-height: 1.35; overflow-wrap: anywhere;
+    }
+    .connector { display: grid; place-items: center; color: var(--accent); font-weight: 800; }
+    .connector strong { font-size: 20px; line-height: 1; }
+    details {
+      margin: 0 18px 18px; border: 1px solid var(--line); border-radius: 8px;
+      background: var(--panel-soft); padding: 12px 14px;
+    }
+    .scorecard {
+      margin: 0 18px 12px; border: 1px solid var(--line); border-radius: 8px;
+      padding: 14px; background: #ffffff;
+    }
+    .scorecard h3 { margin: 0 0 10px; font-size: 14px; }
+    .score-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .score {
+      border: 1px solid var(--line); border-radius: 8px; background: var(--panel-soft);
+      padding: 10px; min-height: 78px;
+    }
+    .score span { color: var(--muted); display: block; font-size: 11px; text-transform: uppercase; font-weight: 800; }
+    .score strong { display: block; margin: 4px 0; font-size: 18px; }
+    .score p { margin: 0; color: #475467; font-size: 12px; }
+    summary { cursor: pointer; color: var(--accent-strong); font-weight: 700; }
+    .sig {
+      margin: 10px 0 0; color: var(--code); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px; overflow-wrap: anywhere;
+    }
+    .empty-map {
+      min-height: 260px; display: grid; place-items: center; text-align: center;
+      color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; background: var(--panel-soft);
+      padding: 24px;
+    }
+    .empty-map strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 16px; }
+    @media (max-width: 900px) {
+      .shell { padding: 18px; }
+      .metrics { grid-template-columns: 1fr; }
+      .map { grid-template-columns: 1fr; gap: 10px; }
+      .context-grid { grid-template-columns: 1fr; }
+      .score-grid { grid-template-columns: 1fr; }
+      .connector { min-height: 28px; transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <a class="back" href="{{ url_for('index') }}">Back to runs</a>
+
+    <header class="header">
+      <h1>{{ job.filename }}</h1>
+      <p class="summary">{{ report.summary }}</p>
+      {% if report.analysis_note %}
+        <div class="note">{{ report.analysis_note }}</div>
+      {% endif %}
+    </header>
+
+    <section class="metrics" aria-label="Run details">
+      <div class="metric"><span>Detected flows</span><strong>{{ report.leak_count }}</strong></div>
+      <div class="metric"><span>APK size</span><strong>{{ job.size_bytes|filesizeformat }}</strong></div>
+      <div class="metric"><span>Highest risk</span><strong>{{ job.highest_risk or "R1" }}</strong></div>
+      <div class="metric"><span>Analysis mode</span><strong>{{ report.analysis_mode or "default" }}</strong></div>
+    </section>
+
+    <section class="panel">
+      <h2>Privacy flow map</h2>
+      <div class="panel-body">
+        <div class="flows">
+          {% for leak in report.leaks %}
+            <article class="flow">
+              <div class="flow-head">
+                <strong>
+                  {{ "Unclassified source" if leak.source_node.data_category in ["UNKNOWN", "NO_CATEGORY"] else leak.source_node.data_category }}
+                  moves toward
+                  {{ "unclassified sink" if leak.sink_node.sink_category in ["UNKNOWN", "NO_CATEGORY"] else leak.sink_node.sink_category }}
+                </strong>
+                <span class="risk-pill risk-{{ leak.risk_node.level|lower }}">{{ leak.risk_node.level }} {{ leak.risk_node.label }}</span>
+              </div>
+              <div class="map">
+                <div class="node source">
+                  <span>Source</span>
+                  <strong>{{ "Unclassified" if leak.source_node.data_category in ["UNKNOWN", "NO_CATEGORY"] else leak.source_node.data_category }}</strong>
+                  <p>Sensitive data enters through this API or framework call.</p>
+                  {% if leak.source_node.data_category in ["UNKNOWN", "NO_CATEGORY"] %}
+                    <div class="technical-hint">{{ leak.source_node.signature }}</div>
+                  {% endif %}
+                </div>
+                <div class="connector"><strong>→</strong></div>
+                <div class="node method">
+                  <span>App code</span>
+                  <strong>{{ leak.intermediate_node.method.split(':')[-1].strip() }}</strong>
+                  <p>Role: {{ leak.intermediate_node.role or "Propagation" }}</p>
+                </div>
+                <div class="connector"><strong>→</strong></div>
+                <div class="node sink">
+                  <span>Sink</span>
+                  <strong>{{ "Unclassified" if leak.sink_node.sink_category in ["UNKNOWN", "NO_CATEGORY"] else leak.sink_node.sink_category }}</strong>
+                  <p>The data reaches an output, storage, IPC, logging, or network-related operation.</p>
+                  {% if leak.sink_node.sink_category in ["UNKNOWN", "NO_CATEGORY"] %}
+                    <div class="technical-hint">{{ leak.sink_node.signature }}</div>
+                  {% endif %}
+                </div>
+                <div class="connector"><strong>→</strong></div>
+                <div class="node risk">
+                  <span>Risk</span>
+                  <strong>{{ leak.risk_node.level }} {{ leak.risk_node.label }}</strong>
+                  <p>{{ leak.risk_node.interpretation }}</p>
+                </div>
+              </div>
+              <section class="context-node">
+                <span>Context</span>
+                <div class="context-grid">
+                  <div class="context-chip"><strong>Component</strong>{{ leak.context_node.component }}</div>
+                  <div class="context-chip"><strong>Permission</strong>{{ leak.context_node.permission }}</div>
+                  <div class="context-chip"><strong>Path length</strong>{{ leak.context_node.path_length }} nodes</div>
+                </div>
+              </section>
+              <section class="scorecard">
+                <h3>Risk score: {{ leak.risk_node.total }} points</h3>
+                <div class="score-grid">
+                  <div class="score">
+                    <span>Sensitive source</span>
+                    <strong>+{{ leak.risk_node.scores.sensitive_source }}</strong>
+                    <p>+3 when the source is known sensitive data.</p>
+                  </div>
+                  <div class="score">
+                    <span>Local storage</span>
+                    <strong>+{{ leak.risk_node.scores.local_storage }}</strong>
+                    <p>+1 when data lands in file, database, or sync storage.</p>
+                  </div>
+                  <div class="score">
+                    <span>External sink</span>
+                    <strong>+{{ leak.risk_node.scores.network }}</strong>
+                    <p>+3 for network, SMS, phone, email, IPC, or similar outbound sinks.</p>
+                  </div>
+                  <div class="score">
+                    <span>Third party</span>
+                    <strong>+{{ leak.risk_node.scores.third_party|default(0) }}</strong>
+                    <p>+4 when the sink appears to be an analytics, ads, tracking, or SDK endpoint.</p>
+                  </div>
+                  <div class="score">
+                    <span>Multiple sinks</span>
+                    <strong>+{{ leak.risk_node.scores.multiple_sinks }}</strong>
+                    <p>+2 when this run has multiple detected sinks.</p>
+                  </div>
+                  <div class="score">
+                    <span>Encryption</span>
+                    <strong>{{ leak.risk_node.scores.encryption|default(0) }}</strong>
+                    <p>-2 when encryption is visible in the path signature.</p>
+                  </div>
+                  <div class="score">
+                    <span>Secure protocol</span>
+                    <strong>{{ leak.risk_node.scores.secure_protocol|default(0) }}</strong>
+                    <p>-1 when HTTPS, SSL, or TLS is visible in the path signature.</p>
+                  </div>
+                  <div class="score">
+                    <span>Anonymization</span>
+                    <strong>{{ leak.risk_node.scores.anonymization|default(0) }}</strong>
+                    <p>-1 when anonymization, pseudonymization, or hashing is visible.</p>
+                  </div>
+                </div>
+                <p class="summary" style="margin-top: 10px;">Recommended action: {{ leak.risk_node.recommended_action }}</p>
+              </section>
+              <details>
+                <summary>Technical signatures</summary>
+                <div class="sig">Source: {{ leak.source_node.signature }}</div>
+                <div class="sig">Method: {{ leak.intermediate_node.method }}</div>
+                <div class="sig">Sink: {{ leak.sink_node.signature }}</div>
+              </details>
+            </article>
+          {% else %}
+            <div class="empty-map">
+              <div>
+                <strong>No mapped flows in this run.</strong>
+                FlowDroid did not return any configured source-to-sink paths for this APK.
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -3,8 +3,13 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV EXPLAINDROID_DATA_DIR=/data
+ENV EXPLAINDROID_JAVA_MAX_HEAP_MB=2048
+ENV EXPLAINDROID_PROCESS_MULTIPLE_DEX=0
+ENV EXPLAINDROID_LENIENT_PARSING=1
+ENV EXPLAINDROID_FLOWDROID_FALLBACK_ARGS="-ot -nc"
 ENV ANDROID_HOME=/opt/android-sdk
 ENV ANDROID_PLATFORMS=/opt/android-sdk/platforms
+ENV JAVA_BIN=java
 ENV HOST=0.0.0.0
 ENV PORT=8080
 
@@ -15,7 +20,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 ARG ANDROID_CMDLINE_TOOLS_ZIP=commandlinetools-linux-14742923_latest.zip
-ARG ANDROID_PLATFORM=android-35
+ARG ANDROID_PLATFORM=android-36
 
 RUN mkdir -p ${ANDROID_HOME}/cmdline-tools \
     && wget -q https://dl.google.com/android/repository/${ANDROID_CMDLINE_TOOLS_ZIP} -O /tmp/cmdline-tools.zip \
@@ -38,4 +43,4 @@ RUN mkdir -p /data/uploads /data/reports /data/cache
 
 EXPOSE 8080
 
-CMD ["python", "explaindroid/app.py"]
+CMD ["python", "-m", "explaindroid.app"]

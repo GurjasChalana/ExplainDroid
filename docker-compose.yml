@@ -1,12 +1,46 @@
 services:
-  explaindroid:
+  web:
     build: .
+    command: python -m explaindroid.app
     ports:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://explaindroid:explaindroid@postgres:5432/explaindroid
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
     volumes:
       - explaindroid-data:/data
 
+  worker:
+    build: .
+    command: python -m explaindroid.worker
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://explaindroid:explaindroid@postgres:5432/explaindroid
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - explaindroid-data:/data
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: explaindroid
+      POSTGRES_USER: explaindroid
+      POSTGRES_PASSWORD: explaindroid
+    volumes:
+      - explaindroid-postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
 volumes:
   explaindroid-data:
+  explaindroid-postgres:
