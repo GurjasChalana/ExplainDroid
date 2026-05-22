@@ -57,6 +57,16 @@ class ExplainDroidMvpTests(unittest.TestCase):
         self.assertEqual(job["leak_count"], 2)
         self.assertEqual(job["report"]["app"], "demo.apk")
 
+    def test_row_to_dict_accepts_postgres_jsonb_dict(self):
+        row = {
+            "id": "job-1",
+            "report_json": {"app": "demo.apk", "leak_count": 0, "leaks": []},
+        }
+
+        job = self.db.row_to_dict(row)
+
+        self.assertEqual(job["report"]["app"], "demo.apk")
+
     def test_next_queued_job_returns_oldest_queued_job(self):
         self.db.create_job("job-1", "one.apk", "uploads/job-1/one.apk", "local", 1)
         self.db.create_job("job-2", "two.apk", "uploads/job-2/two.apk", "local", 1)

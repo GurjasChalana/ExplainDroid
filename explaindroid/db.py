@@ -69,7 +69,10 @@ def row_to_dict(row):
         return None
     data = dict(row)
     if data.get("report_json"):
-        data["report"] = json.loads(data["report_json"])
+        if isinstance(data["report_json"], str):
+            data["report"] = json.loads(data["report_json"])
+        else:
+            data["report"] = data["report_json"]
     else:
         data["report"] = None
     return data
